@@ -1,4 +1,70 @@
-An experimemtal extensible “Mixture of Mixture of Agents” agent implementation, capable of solving problems in a variety of domains depending on the mixture (of mixture) of agents included. Tuned to complete long-running, complex, SDLC tasks.
+# MoMoA: Mixture of Mixture of Agents
+
+Coordinate independent LLM experts to solve complex, long-running engineering tasks that can exceed the capabilities of single-agent loops.
+
+---
+
+MoMoA breaks large projects into sub-tasks and assigns them to dynamic "Work Phase Rooms." Within each room, two specialized experts—like a **Creative Developer** and a **Conservative Senior Engineer**—are forced to debate, review, and validate each other's work before reporting back to an Orchestrator.
+
+To start a session, point the CLI at your project directory and describe the goal:
+
+```bash
+python3 python_cli.py "Refactor the authentication logic to use JWT instead of sessions" \
+  --directory ./my-web-app \
+  --output ./updates
+```
+
+If the Orchestrator encounters an unresolvable ambiguity, it will pause and prompt you for a "Human-in-the-Loop" response directly in your terminal:
+
+```text
+----------------------------Question from the agent:----------------------------
+I found two different ways to implement the API endpoint. Should I prioritize 
+execution speed or memory efficiency for this specific module?
+---------------------------------------------------------------------------------
+
+Your answer: Prioritize execution speed; memory is not a bottleneck here.
+```
+
+---
+
+MoMoA is an experimental architecture tuned for the Software Development Life Cycle (SDLC). It prioritizes consistency over speed by requiring multiple rounds of internal peer review and validation before any file change is finalized.
+
+### CLI Reference
+
+| Argument | Description | Default |
+| --- | --- | --- |
+| `positional_prompt` | The primary task description for the agent. | (Required) |
+| `-d, --directory` | The local path the agent should read and modify. | `None` |
+| `-o, --output` | Where to save worklogs and the final result diffs. | `agent_output` |
+| `-a, --assumptions` | Path to a text file containing rules the agent must obey. | `assumptions.txt` |
+| `-s, --serverAddress` | The address of the running MoMoA server. | `localhost:3007` |
+| `--no-save` | Display diffs and results without writing all files to disk. | `False` |
+
+### Setup & Configuration
+
+1. **Environment:** Create a `.env` file in the server directory with your `GEMINI_API_KEY` and `GITHUB_TOKEN`.
+2. **Ignore Rules:** Create an `.agentignore` file in your project root. This follows standard `.gitignore` syntax to prevent the agent from reading heavy dependencies (like `node_modules`) or sensitive secrets.
+3. **Launch Server:**
+```bash
+npm install
+npm run dev
+```
+
+4. **Launch Client:** 
+Ensure you have `websocket-client` installed via pip:
+```bash
+pip install websocket-client
+python3 python_cli.py "Your prompt here" -d ./your-project
+```
+
+### Key Architecture Components
+
+* **The Orchestrator:** Breaks the prompt into sub-tasks and reviews work phase reports.
+* **Work Phase Rooms:** Specialized environments (Engineering, Planning, Documentation) with domain-specific tools.
+* **Experts:** Personas with conflicting prompts (e.g., "Skeptical" vs "Creative") designed to catch logical errors through dissent.
+* **The Overseer:** A background process that triggers every 15 minutes to unstick the agent if it enters a circular logic loop.
+
+## About this Project
 
 Project Home Page:
 https://labs.google/code/experiments/momoa
@@ -8,45 +74,6 @@ https://github.com/retomeier/momoa
 
 Maintained by:
 Reto Meier
- 
-## Quick Start Guide
-Create a `.env` file containing a Gemini API key:
-```
-GEMINI_API_KEY
-```
-
-Add an `.agentignore` file in your project folder. It uses the same rules as a `.gitignore` file.
-
-Server:
-```
-npm install
-npm run dev
-```
-
-Client:
-```
-python3 client-cli/python_cli.py "Create a Markdown describing the color blue." -d ~/Code/my_project -o ~/Code/my_project/agent_output
-```
-
-
-## How it works
-Server:
-1. The Orchestrator takes a user prompt and has instructions to break up the work and start Work Phases to complete each task.
-2. When the Orchestrator creates a new Work Phase to complete a task, we ask the LLM to:
-2.1 Choose the most suitable “Work Phase Room” (Eg. Engineering, Documentation, Planning, …).
-2.2 Choose two “Expert Personas” (Eg. Senior Engineer, Principal Researcher, Tech Writer, …) to collaborate.
-3. The Experts within each Work Phase take turns, collaborating on the problem via tool use and discussion until they agree the task is complete and they provide a report to the Orchestrator. 
-4. The Orchestrator reviews the Work Phase report and continues creating new Work Phases. It’s instructed to start a Validation Work Phase when it thinks it’s finished, and to keep going until validation passes.
-5. When Validation passes, the Orchestrator summarizes the project work and finishes.
-6. The harness provides the summary and a diff of all the file changes to the client.
-
-Client:
-1. Connects with the Server and sends the initial request parameters.
-2. Sends all the files in the source folder that aren't excluded by the .agentignore file.
-3. Outputs progress updates received from the Server.
-4. Handles human-in-the-loop requests from the Server.
-5. Saves the worklogs showing what the agent is doing in real time.
-6. Saves the results from the agent (file changes and project summary).
 
 ## License
 This project is licensed under the Apache 2 License - see the [license.md](LICENSE) file for details.
